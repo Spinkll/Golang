@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	fmt.Println(MinInt(10, 15))
+	fmt.Println(MinInt(-10, 15))
 }
 
 func MinInt(x, y int) int {

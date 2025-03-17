@@ -16,6 +16,6 @@ func ErrorMessageToCode(msg string) int {
 	case "UNKNOWN":
 		return 2
 	default:
-		return 2
+		return 3
 	}
 }

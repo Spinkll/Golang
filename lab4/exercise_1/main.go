@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	u := UserCreateRequest{FirstName: "", Age: 0}
+	u := UserCreateRequest{FirstName: "", Age: 2}
 	fmt.Println(Validate(u))
 }
 
