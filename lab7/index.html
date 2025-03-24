@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fc;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th,
+        td {
+            padding: 8px 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .form-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        input[type="text"],
+        input[type="submit"] {
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        .button {
+            padding: 10px 20px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background-color: #d32f2f;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Employee Management</h1>
+    </header>
+
+    <div class="container">
+        <h2>Employee List</h2>
+        <table id="employeeTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Position</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <div class="form-container">
+            <h3>Add New Employee</h3>
+            <form id="addEmployeeForm">
+                <input type="text" id="employeeName" placeholder="Name" required>
+                <input type="text" id="employeePosition" placeholder="Position" required>
+                <input type="submit" value="Add Employee">
+            </form>
+        </div>
+
+        <div class="form-container" id="updateEmployeeFormContainer" style="display: none;">
+            <h3>Update Employee</h3>
+            <form id="updateEmployeeForm">
+                <input type="text" id="updateEmployeeName" placeholder="Name" required>
+                <input type="text" id="updateEmployeePosition" placeholder="Position" required>
+                <input type="submit" value="Update Employee">
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const apiUrl = 'http://localhost:8080/employees';
+        const employeeTable = document.getElementById('employeeTable').getElementsByTagName('tbody')[0];
+        const addEmployeeForm = document.getElementById('addEmployeeForm');
+        const updateEmployeeFormContainer = document.getElementById('updateEmployeeFormContainer');
+        const updateEmployeeForm = document.getElementById('updateEmployeeForm');
+        let selectedEmployeeId = null;
+
+        async function fetchEmployees() {
+            try {
+                const response = await fetch(apiUrl);
+                const employees = await response.json();
+                displayEmployees(employees);
+            } catch (error) {
+                console.error('Error fetching employees:', error);
+            }
+        }
+
+        function displayEmployees(employees) {
+            employeeTable.innerHTML = '';
+            employees.forEach(emp => {
+                const row = employeeTable.insertRow();
+                row.innerHTML = `
+          <td>${emp.id}</td>
+          <td>${emp.name}</td>
+          <td>${emp.position}</td>
+          <td>
+            <button class="button" onclick="editEmployee(${emp.id}, '${emp.name}', '${emp.position}')">Edit</button>
+            <button class="button" onclick="deleteEmployee(${emp.id})">Delete</button>
+          </td>
+        `;
+            });
+        }
+
+        addEmployeeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('employeeName').value;
+            const position = document.getElementById('employeePosition').value;
+
+            try {
+                const response = await fetch(apiUrl + '/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, position })
+                });
+                const newEmployee = await response.json();
+                fetchEmployees(); t
+                addEmployeeForm.reset(); 
+            } catch (error) {
+                console.error('Error adding employee:', error);
+            }
+        });
+
+        function editEmployee(id, name, position) {
+            selectedEmployeeId = id;
+            document.getElementById('updateEmployeeName').value = name;
+            document.getElementById('updateEmployeePosition').value = position;
+            updateEmployeeFormContainer.style.display = 'block';
+        }
+
+        updateEmployeeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('updateEmployeeName').value;
+            const position = document.getElementById('updateEmployeePosition').value;
+
+            try {
+                await fetch(apiUrl + '/update?id=' + selectedEmployeeId, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, position })
+                });
+                fetchEmployees(); 
+                updateEmployeeFormContainer.style.display = 'none'; 
+                updateEmployeeForm.reset(); 
+            } catch (error) {
+                console.error('Error updating employee:', error);
+            }
+        });
+
+        
+        async function deleteEmployee(id) {
+            try {
+                await fetch(apiUrl + '/delete?id=' + id, {
+                    method: 'DELETE'
+                });
+                fetchEmployees(); 
+            } catch (error) {
+                console.error('Error deleting employee:', error);
+            }
+        }
+
+        fetchEmployees();
+    </script>
+</body>
+
+</html>
