@@ -41,8 +41,9 @@ func Crawl(url string, depth int, fetcher Fetcher, visited *SafeMap, wg *sync.Wa
 
 	fmt.Printf("found: %s %q\n", url, body) // Виводимо інформацію про знайдену сторінку.
 
+	wg.Add(len(urls))
+
 	for _, u := range urls { // Запускаємо нові горутини для кожного знайденого URL.
-		wg.Add(1)
 		go Crawl(u, depth-1, fetcher, visited, wg)
 	}
 }
@@ -71,7 +72,6 @@ func (f fakeFetcher) Fetch(url string) (string, []string, error) { // Fetch — 
 	return "", nil, fmt.Errorf("not found: %s", url)
 }
 
-// Тестові дані.
 var fetcher = fakeFetcher{
 	"https://golang.org/": &fakeResult{
 		"The Go Programming Language",

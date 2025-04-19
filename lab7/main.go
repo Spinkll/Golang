@@ -11,18 +11,18 @@ import (
 	"github.com/rs/cors"
 )
 
-// Структура для співробітника
 type Employee struct {
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	Position string `json:"position"`
+	ID        int    `json:"id"`
+	FirstName string `json:"firstname"`
+	LastName  string `json:"lastname"`
+	Age       int    `json:"age"`
+	Position  string `json:"position"`
 }
 
-// Масив співробітників і м'ютекс для потокобезпечного доступу
 var employees []Employee
 var mu sync.Mutex
+var nextId int = 0
 
-// Отримати всіх співробітників
 func getEmployees(w http.ResponseWriter, r *http.Request) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -31,26 +31,24 @@ func getEmployees(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(employees)
 }
 
-// Додати нового співробітника
 func addEmployee(w http.ResponseWriter, r *http.Request) {
 	mu.Lock()
 	defer mu.Unlock()
 
 	var newEmployee Employee
-	// Розпаковуємо JSON з тіла запиту в структуру
 	if err := json.NewDecoder(r.Body).Decode(&newEmployee); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	// Визначаємо унікальний ID
-	newEmployee.ID = len(employees) + 1
+
+	newEmployee.ID = nextId
+	nextId++
 	employees = append(employees, newEmployee)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(newEmployee)
 }
 
-// Оновити інформацію про співробітника
 func updateEmployee(w http.ResponseWriter, r *http.Request) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -70,7 +68,9 @@ func updateEmployee(w http.ResponseWriter, r *http.Request) {
 
 	for i, emp := range employees {
 		if emp.ID == id {
-			employees[i].Name = updatedEmployee.Name
+			employees[i].FirstName = updatedEmployee.FirstName
+			employees[i].LastName = updatedEmployee.LastName
+			employees[i].Age = updatedEmployee.Age
 			employees[i].Position = updatedEmployee.Position
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(employees[i])
@@ -81,7 +81,6 @@ func updateEmployee(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Employee not found", http.StatusNotFound)
 }
 
-// Видалити співробітника
 func deleteEmployee(w http.ResponseWriter, r *http.Request) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -106,24 +105,23 @@ func deleteEmployee(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	r := mux.NewRouter()
-	// Ініціалізуємо початкових співробітників
-	employees = append(employees, Employee{ID: 1, Name: "John Doe", Position: "Developer"})
-	employees = append(employees, Employee{ID: 2, Name: "Jane Smith", Position: "Manager"})
 
-	// Визначаємо маршрути для маршрутизатора mux
+	employees = append(employees, Employee{ID: 1, FirstName: "John", LastName: "Doe", Age: 30, Position: "Developer"})
+	employees = append(employees, Employee{ID: 2, FirstName: "Jane", LastName: "Smith", Age: 35, Position: "Manager"})
+
+	nextId = len(employees) + 1
+
 	r.HandleFunc("/employees", getEmployees).Methods("GET")
-	r.HandleFunc("/employees/add", addEmployee).Methods("POST")
-	r.HandleFunc("/employees/update", updateEmployee).Methods("PUT")
+	r.HandleFunc("/employee", addEmployee).Methods("POST")
+	r.HandleFunc("/employees/update", updateEmployee).Methods("PATCH")
 	r.HandleFunc("/employees/delete", deleteEmployee).Methods("DELETE")
 
-	// Додаємо підтримку CORS для всіх запитів
 	handler := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedMethods: []string{"GET", "POST", "PATCH", "DELETE"},
 		AllowedHeaders: []string{"Content-Type"},
 	}).Handler(r)
 
-	// Запускаємо сервер на порту 8080
 	fmt.Println("Server is running on port 8080...")
 	http.ListenAndServe(":8080", handler)
 }

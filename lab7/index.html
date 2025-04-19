@@ -56,6 +56,7 @@
         }
 
         input[type="text"],
+        input[type="number"],
         input[type="submit"] {
             padding: 10px;
             margin: 10px 0;
@@ -100,9 +101,10 @@
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Name</th>
+                    <th>FirstName</th>
+                    <th>LastName</th>
+                    <th>Age</th>
                     <th>Position</th>
-                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -112,7 +114,9 @@
         <div class="form-container">
             <h3>Add New Employee</h3>
             <form id="addEmployeeForm">
-                <input type="text" id="employeeName" placeholder="Name" required>
+                <input type="text" id="employeeFirstName" placeholder="FirstName" required>
+                <input type="text" id="employeeLastName" placeholder="LastName" required>
+                <input type="number" id="employeeAge" placeholder="Age" required min="0">
                 <input type="text" id="employeePosition" placeholder="Position" required>
                 <input type="submit" value="Add Employee">
             </form>
@@ -121,7 +125,9 @@
         <div class="form-container" id="updateEmployeeFormContainer" style="display: none;">
             <h3>Update Employee</h3>
             <form id="updateEmployeeForm">
-                <input type="text" id="updateEmployeeName" placeholder="Name" required>
+                <input type="text" id="updateEmployeeFirstName" placeholder="FirstName" required>
+                <input type="text" id="updateEmployeeLastName" placeholder="LastName" required>
+                <input type="number" id="updateEmployeeAge" placeholder="Age" required min="0">
                 <input type="text" id="updateEmployeePosition" placeholder="Position" required>
                 <input type="submit" value="Update Employee">
             </form>
@@ -152,10 +158,12 @@
                 const row = employeeTable.insertRow();
                 row.innerHTML = `
           <td>${emp.id}</td>
-          <td>${emp.name}</td>
+          <td>${emp.firstname}</td>
+          <td>${emp.lastname}</td>
+          <td>${emp.age}</td>
           <td>${emp.position}</td>
           <td>
-            <button class="button" onclick="editEmployee(${emp.id}, '${emp.name}', '${emp.position}')">Edit</button>
+            <button class="button" onclick="editEmployee(${emp.id}, '${emp.firstname}','${emp.lastname}','${emp.age}', '${emp.position}')">Edit</button>
             <button class="button" onclick="deleteEmployee(${emp.id})">Delete</button>
           </td>
         `;
@@ -164,44 +172,50 @@
 
         addEmployeeForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const name = document.getElementById('employeeName').value;
+            const firstname = document.getElementById('employeeFirstName').value;
+            const lastname = document.getElementById('employeeLastName').value;
+            const age = parseInt(document.getElementById('employeeAge').value);
             const position = document.getElementById('employeePosition').value;
 
             try {
-                const response = await fetch(apiUrl + '/add', {
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ name, position })
+                    body: JSON.stringify({ firstname,lastname,age, position })
                 });
                 const newEmployee = await response.json();
-                fetchEmployees(); t
+                fetchEmployees(); 
                 addEmployeeForm.reset(); 
             } catch (error) {
                 console.error('Error adding employee:', error);
             }
         });
 
-        function editEmployee(id, name, position) {
+        function editEmployee(id, firstname,lastname,age, position) {
             selectedEmployeeId = id;
-            document.getElementById('updateEmployeeName').value = name;
+            document.getElementById('updateEmployeeFirstName').value = firstname;
+            document.getElementById('updateEmployeeLastName').value = lastname;
+            document.getElementById('updateEmployeeAge').value = age;
             document.getElementById('updateEmployeePosition').value = position;
             updateEmployeeFormContainer.style.display = 'block';
         }
 
         updateEmployeeForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const name = document.getElementById('updateEmployeeName').value;
+            const firstname = document.getElementById('updateEmployeeFirstName').value;
+            const lastname = document.getElementById('updateEmployeeLastName').value;
+            const age = parseInt(document.getElementById('updateEmployeeAge').value);
             const position = document.getElementById('updateEmployeePosition').value;
 
             try {
-                await fetch(apiUrl + '/update?id=' + selectedEmployeeId, {
-                    method: 'PUT',
+                await fetch(apiUrl + '?id=' + selectedEmployeeId, {
+                    method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ name, position })
+                    body: JSON.stringify({ firstname, lastname, age, position })
                 });
                 fetchEmployees(); 
                 updateEmployeeFormContainer.style.display = 'none'; 
@@ -214,7 +228,7 @@
         
         async function deleteEmployee(id) {
             try {
-                await fetch(apiUrl + '/delete?id=' + id, {
+                await fetch(apiUrl + '?id=' + id, {
                     method: 'DELETE'
                 });
                 fetchEmployees(); 
